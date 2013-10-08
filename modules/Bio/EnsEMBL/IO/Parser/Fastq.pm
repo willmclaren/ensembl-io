@@ -47,7 +47,7 @@ sub seek {
 sub is_metadata {
   my ($self) = @_;
 
-  return($self->{current_block} =~ /^@|^\+/);
+  return($self->{current_block} =~ /^@|^\+/o);
 }
 
 =head2 read_metadata
@@ -65,7 +65,7 @@ sub read_metadata {
 
   my $meta = $self->{current_block};
 
-  if($meta =~ /^@([A-Za-z0-9_.:-]+)\s+/) {
+  if($meta =~ /^@([A-Za-z0-9_.:-]+)\s+/o) {
     $self->{metadata} = $1;
   }
   elsif($meta =~ /^+/) {
@@ -89,8 +89,9 @@ sub read_record {
   my ($self) = @_;
 
   my $seq = self->{current_block} ;
-  if($seq =~ /[A-Za-z\n\.~]+/){
-
+  if($seq =~ /[A-Za-z\n\.~]+/o){
+    chomp($seq);
+    $seq =~ s/\s//go;
   }
   else{
     throw("Wrong format or unexpected symbol in sequence:\n$seq");
