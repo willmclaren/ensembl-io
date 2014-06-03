@@ -23,6 +23,8 @@ If you are extending this class you need to implement:
 - read_metadata: reads $self->{current_block}, stores relevant data in $self->{metadata} hash ref
 - read_record: reads $self->{current_block}, possibly invoking $self->next_block(), stores list in $self->{record}
 - a bunch of getters.
+- validate_record: reads $self->{record}, checks content
+- validate_metadata: reads $self->{current_block}, checks metadata 
 
 Optionally, you may want to implement:
 - seek: seeks coordinate in sorted/indexed file

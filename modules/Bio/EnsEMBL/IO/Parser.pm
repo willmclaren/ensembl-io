@@ -22,6 +22,8 @@ If you are extending this class you need to implement:
 - read_metadata: reads $self->{current_block}, stores relevant data in $self->{metadata} hash ref
 - read_record: reads $self->{current_block}, possibly invoking $self->next_block(), stores list in $self->{record}
 - a bunch of getters.
+- validate_record: reads $self->{record}, checks content
+- validate_metadata: reads $self->{current_block}, checks metadata 
 
 Optionally, you may want to implement:
 - seek: seeks coordinate in sorted/indexed file
@@ -39,7 +41,7 @@ use Bio::EnsEMBL::Utils::Scalar qw/assert_ref/;
 =head2 new
 
     Constructor
-    Argument [1+]: Hash of parameters for configuration, e.g. buffer sizes or 
+    Argument [1+]: Hash of parameters for configuration, e.g. buffer sizes or
                    specific functions for handling headers or data
     Returntype   : Bio::EnsEMBL::IO::Parser
 
@@ -48,29 +50,33 @@ use Bio::EnsEMBL::Utils::Scalar qw/assert_ref/;
 sub new {
     my $class = shift;
     my $param_hash_ref = shift;
-    
+
     my $self = {
-	    current_block => undef,
-	    waiting_block => undef,
-	    record => undef,
-	    metadata => {},
-	    params => $param_hash_ref,
-    	    metadata_changed => 0,
+        current_block => undef,
+        waiting_block => undef,
+        record => undef,
+        metadata => {},
+        params => $param_hash_ref,
+        metadata_changed => 0,
     };
 
     # By default metadata is read and parsed
     if (not exists $self->{'params'}->{'must_parse_metadata'}) {
-	    $self->{'params'}->{'must_parse_metadata'} = 1;
+        $self->{'params'}->{'must_parse_metadata'} = 1;
+    }
+    # By default file is validated
+    if (not exists $self->{'params'}->{'must_validate'}) {
+        $self->{'params'}->{'must_validate'} = 1;
     }
 
     bless $self, $class;
-    
+
     return $self;
 }
 
 =head2 shift_block
 
-    Description: Wrapper for user defined functions 
+    Description: Wrapper for user defined functions
                  Loads the buffered data as current, then stores a new block of data
                  into the waiting buffer.
     Returntype : Void
@@ -85,7 +91,7 @@ sub shift_block {
 
 =head2 next_block
 
-    Description: Wrapper for user defined functions 
+    Description: Wrapper for user defined functions
                  Goes through the file blocks, either skipping or parsing metadata blocks
     Returntype : Void
 
@@ -97,8 +103,11 @@ sub next_block {
     $self->{'metadata_changed'} = 0;
     while( defined $self->{'current_block'} && $self->is_metadata() ) {
         if ($self->{'params'}->{'must_parse_metadata'}) {
+            if ($self->{'params'}->{'must_validate'}) {
+                 $self->validate_metadata();
+            }
             $self->read_metadata();
-	    $self->{'metadata_changed'} = 1;
+            $self->{'metadata_changed'} = 1;
         }
         $self->shift_block();
     }
@@ -107,7 +116,7 @@ sub next_block {
 =head2 next
 
     Description: Business logic of the iterator
-                 Reads blocks of data from the file, determines whether they contain 
+                 Reads blocks of data from the file, determines whether they contain
                  metadata or an actual record, optionally processes the metadata, and
                  terminates when a record has been loaded.
     Returntype : True/False depending on whether a record was found.
@@ -121,17 +130,20 @@ sub next {
     $self->next_block();
 
     if (defined $self->{'current_block'}) {
-            $self->read_record();
-            return 1;
+        $self->read_record();
+        if ($self->{'params'}->{'must_validate'}) {
+            $self->validate_record();
+        }
+        return 1;
     } else {
             return 0;
     }
 }
 
-=head2 metadataChanged 
+=head2 metadataChanged
 
     Description: whether metadata was changed since the previous record
-    Returntype : Boolean 
+    Returntype : Boolean
 
 =cut
 
@@ -143,7 +155,7 @@ sub metadataChanged {
 =head2 seek
 
     Description: Placeholder for user-defined seek function.
-                 Function must allow the user to request that all the subsequent 
+                 Function must allow the user to request that all the subsequent
                  records be part of a given genomic region.
     Returntype : Void
 
@@ -158,7 +170,7 @@ sub seek {
     Description: Placeholder for user-defined IO function.
                  Function must obtain and store the next block (e.g. line) of data from
                  the file.
-    Returntype : Void 
+    Returntype : Void
 
 =cut
 
@@ -183,7 +195,7 @@ sub is_metadata {
 
     Description: Placeholder for user-defined metadata function.
                  Function must go through $self-{'current_block'},
-                 extract relevant metadata, and store it in 
+                 extract relevant metadata, and store it in
                  $self->{'metadata'}
     Returntype : Boolean
 
@@ -198,7 +210,7 @@ sub read_metadata {
     Description: Placeholder for user-defined record lexing function.
                  Function must pre-process the data in $self->current block so that it is
                  readily available to accessor methods.
-    Returntype : Void 
+    Returntype : Void
 
 =cut
 
@@ -218,7 +230,6 @@ sub open {
     throw("Method not implemented. This is really important");
 }
 
-
 =head2 close
 
     Description: Placeholder for user-defined filehandling function.
@@ -229,6 +240,30 @@ sub open {
 
 sub close {
     throw("Method not implemented. This is really important");
+}
+
+=head2 validate_record
+
+    Description: Throws an error if any of $self->{record}
+                 does not fit the spec.
+    Returntype : True/False on success/failure
+
+=cut
+
+sub validate_record {
+    # Method validate_record not implemented. This is probably important
+}
+
+=head2 validate_metadata
+
+    Description: Throws an error if any of $self->{'current_block'}
+                 does not fit the spec for metadata.
+    Returntype : True/False on success/failure
+
+=cut
+
+sub validate_metadata {
+    # Method validate_metadata not implemented. This is probably important
 }
 
 =head2 close

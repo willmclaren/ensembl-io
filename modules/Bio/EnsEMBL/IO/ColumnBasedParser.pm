@@ -39,6 +39,8 @@ use base qw/Bio::EnsEMBL::IO::TextParser/;
     - is_metadata: determines whether $self->{current_block} is metadata
     - read_metadata: reads $self->{current_block}, stores relevant data in $self->{metadata} hash ref
     - a bunch of getters.
+    - validate_record: reads $self->{record}, checks content
+    - validate_metadata: reads $self->{current_block}, checks metadata 
     
     Optionally, you may want to implement:
     - seek: seeks coordinate in sorted/indexed file
