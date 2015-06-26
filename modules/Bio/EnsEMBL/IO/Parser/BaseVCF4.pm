@@ -38,10 +38,20 @@ package Bio::EnsEMBL::IO::Parser::BaseVCF4;
 use strict;
 use warnings;
 use Carp;
+use Bio::EnsEMBL::Utils::Exception qw(warning throw);
+use Storable qw(freeze thaw);
 
 use base qw/Bio::EnsEMBL::IO::ColumnBasedParser/;
 
 my $version = 4.2;
+
+my %FREEZE_EXCLUDE = (
+  current_block => 1,
+  delimiter => 1,
+  filehandle => 1,
+  iterator => 1,
+  waiting_block => 1,
+);
 
 sub next {
   my $self = shift;
@@ -915,6 +925,20 @@ sub is_polymorphic {
   my %uniq_gts = map {$self->{record}->[$_] => 1} @index_list;
 
   return scalar keys %uniq_gts > 1 ? 1 : 0;
+}
+
+# freeze a copy of the VCF record
+sub get_frozen_copy {
+  my $self = shift;
+  
+  my $copy = {
+    record => \@{$self->{record}}
+  };
+  # my $copy = thaw(freeze({ record => $self->{record} }));
+  $copy->{$_} ||= $self->{$_} for grep {!$FREEZE_EXCLUDE{$_}} keys %$self;
+  bless $copy, ref($self);
+  
+  return $copy;
 }
 
 1;
